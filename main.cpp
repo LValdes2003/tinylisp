@@ -1,10 +1,67 @@
-// tiny_lisp.cpp
 #include <iostream>
 #include <sstream>
 #include <stack>
 #include <vector>
+#include <string>
+#include <unordered_map>
+#include <functional>
+#include <limits>
+#include <cmath> // Include for exponentiation
 
 typedef std::vector<std::string> Tokens;
+
+// Define a mapping of operator strings to corresponding functions
+std::unordered_map<std::string, std::function<int(std::vector<int>)>> customOperators = {
+        {"+", [](std::vector<int> operands) {
+            int result = 0;
+            for (int operand : operands) {
+                result += operand;
+            }
+            return result;
+        }},
+        {"*", [](std::vector<int> operands) {
+            int result = 1;
+            for (int operand : operands) {
+                result *= operand;
+            }
+            return result;
+        }},
+        {"-", [](std::vector<int> operands) {
+            if (operands.size() < 2) {
+                return 0; // Handle the case where there are not enough operands
+            }
+            int result = operands[0];
+            for (size_t i = 1; i < operands.size(); ++i) {
+                result -= operands[i];
+            }
+            return result;
+        }},
+        {"/", [](std::vector<int> operands) {
+            if (operands.size() < 2) {
+                return 0; // Handle the case where there are not enough operands
+            }
+            int result = operands[0];
+            for (size_t i = 1; i < operands.size(); ++i) {
+                result /= operands[i];
+            }
+            return result;
+        }},
+        {"^", [](std::vector<int> operands) {
+            if (operands.size() < 2) {
+                return 0; // Handle the case where there are not enough operands
+            }
+            int result = std::pow(operands[0], operands[1]);
+            return result;
+        }},
+        {"%", [](std::vector<int> operands) {
+            if (operands.size() < 2) {
+                return 0; // Handle the case where there are not enough operands
+            }
+            int result = operands[0] % operands[1];
+            return result;
+        }},
+        // Add more custom operators here
+};
 
 Tokens tokenize(const std::string& input) {
     Tokens tokens;
@@ -21,22 +78,16 @@ Tokens tokenize(const std::string& input) {
 int evaluate(Tokens& tokens) {
     std::stack<int> stack;
 
-    while (!tokens.empty()) {
-        std::string token = tokens.back();
-        tokens.pop_back();
-
-        if (token == "+") {
-            int a = stack.top();
-            stack.pop();
-            int b = stack.top();
-            stack.pop();
-            stack.push(a + b);
-        } else if (token == "*") {
-            int a = stack.top();
-            stack.pop();
-            int b = stack.top();
-            stack.pop();
-            stack.push(a * b);
+    for (const std::string& token : tokens) {
+        if (customOperators.find(token) != customOperators.end()) {
+            std::vector<int> operands;
+            while (!stack.empty()) {
+                operands.push_back(stack.top());
+                stack.pop();
+            }
+            std::reverse(operands.begin(), operands.end());
+            int result = customOperators[token](operands);
+            stack.push(result);
         } else {
             stack.push(std::stoi(token));
         }
